@@ -196,7 +196,7 @@ MAX
 <main>
   <section class="hero">
     <div class="container">
-      
+      <div class="military-badge">🎖️ Военнослужащим скидка 10%</div>
       <h1>Междугородний трансфер<br>по всей России!</h1>
       <p>Быстрые перевозки без остановок</p>
       <button class="btn-primary" id="scrollToFormBtn">Рассчитать стоимость поездки</button>
@@ -244,6 +244,7 @@ MAX
           <div class="modern-field relative"><label>Куда</label><input type="text" id="f-to" placeholder="Введите город" autocomplete="off"><div id="to-autocomplete" class="autocomplete-list"></div></div>
           <div class="modern-field"><label>Класс авто</label><select id="f-class"><option value="" disabled selected>Выберите класс</option><option>Стандарт</option><option>Комфорт</option><option>Комфорт+</option><option>Минивэн</option><option>Бизнес</option></select></div>
           <div class="modern-field" style="position:relative"><label>Расстояние (км)</label><input type="number" id="f-km" placeholder="Рассчитывается автоматически" step="1" readonly style="background:transparent;cursor:default;color:#0f172a"><span id="km-spinner" style="display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:0.8rem;color:#2563eb">⏳ Считаю...</span><span id="km-manual-link" style="display:none;font-size:0.72rem;color:#94a3b8;cursor:pointer;text-decoration:underline;margin-top:2px;display:block" onclick="enableManualKm()">Ввести вручную</span></div>
+          
           <div class="modern-field"><label>Пожелания к поездке</label><textarea id="f-comment" rows="2" placeholder="Детали багажа, встреча с табличкой..."></textarea></div>
         </div>
 
@@ -391,6 +392,7 @@ const classSelect = document.getElementById('f-class');
 const kmInput = document.getElementById('f-km');
 const priceAmountSpan = document.getElementById('priceAmount');
 const originalPriceSpan = document.getElementById('originalPriceSpan');
+const isMilitaryCheckbox = document.getElementById('isMilitary');
 
 // ==================== АВТОМАТИЧЕСКИЙ РАСЧЁТ РАССТОЯНИЯ ====================
 let distanceAbortController = null;
@@ -498,6 +500,7 @@ function updatePrice() {
   if(!classSelect || !kmInput || !priceAmountSpan) return;
   const tariff = tariffs[classSelect.value];
   const km = parseFloat(kmInput.value);
+  const isMilitary = isMilitaryCheckbox ? isMilitaryCheckbox.checked : false;
   if (tariff && !isNaN(km) && km > 0) {
     let total = tariff * km;
     let finalTotal = total;
@@ -511,6 +514,7 @@ function updatePrice() {
 }
 if(classSelect) classSelect.addEventListener('change', updatePrice);
 if(kmInput) kmInput.addEventListener('input', updatePrice);
+if(isMilitaryCheckbox) isMilitaryCheckbox.addEventListener('change', updatePrice);
 
 // Отправка в Telegram
 async function sendToTelegram(msg) {
@@ -544,6 +548,7 @@ if(submitBtn){
     const toCity = document.getElementById('f-to') ? document.getElementById('f-to').value.trim() : '';
     const carClass = classSelect ? classSelect.value : '';
     const km = kmInput ? parseFloat(kmInput.value) : NaN;
+    const isMilitary = isMilitaryCheckbox ? isMilitaryCheckbox.checked : false;
     const comment = document.getElementById('f-comment') ? document.getElementById('f-comment').value.trim() : '';
 
     if (!date) { showError('Укажите дату поездки'); return; }
@@ -562,6 +567,7 @@ if(submitBtn){
     let finalPrice = totalPrice;
     if (isMilitary) finalPrice = totalPrice * 0.9;
 
+    const message = `🚖 <b>НОВАЯ ЗАЯВКА ТАКСИ</b>\n📅 Дата: ${date}\n📍 Маршрут: ${fromCity} → ${toCity}\n🚘 Класс: ${carClass}\n📏 Расстояние: ${km} км\n💰 Стоимость: ${finalPrice.toLocaleString('ru-RU')} ₽${isMilitary ? ` (скидка 10%: было ${totalPrice.toLocaleString('ru-RU')} ₽)` : ''}\n🎖️ Военнослужащий: ${isMilitary ? 'Да' : 'Нет'}\n💬 Пожелания: ${comment || '—'}\n📞 Телефон: ${phone}`;
 
     const btn = this;
     btn.textContent = '⏳ ОТПРАВКА...';
@@ -575,6 +581,7 @@ if(submitBtn){
       if(document.getElementById('f-to')) document.getElementById('f-to').value = '';
       if(classSelect) classSelect.value = '';
       if(kmInput) kmInput.value = '';
+      if(isMilitaryCheckbox) isMilitaryCheckbox.checked = false;
       if(document.getElementById('f-comment')) document.getElementById('f-comment').value = '';
       if(priceAmountSpan) priceAmountSpan.innerHTML = '0 <span>₽</span>';
       if(originalPriceSpan) originalPriceSpan.innerHTML = '';
